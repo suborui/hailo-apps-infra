@@ -69,7 +69,7 @@ def main():
         long_description_content_type='text/markdown',
         author='Hailo',
         author_email='support@hailo.ai',
-        url='https://github.com/hailo-ai/hailo-apps-infra',
+        url='https://github.com/suborui/hailo-apps-infra.git',
         install_requires=requirements,
         packages=find_packages(exclude=["tests", "docs"]),
         package_data={

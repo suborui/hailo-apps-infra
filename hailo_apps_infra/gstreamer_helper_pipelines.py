@@ -11,6 +11,9 @@ def get_source_type(input_source):
         return 'libcamera'
     elif input_source.startswith('0x'):
         return 'ximage'
+    elif input_source.startswith("rtsp"):
+        #print("DBUG: =====================rtsp==================")
+        return 'rtsp'
     else:
         return 'file'
 
@@ -95,11 +98,23 @@ def SOURCE_PIPELINE(video_source, video_width=640, video_height=640, video_forma
             f'{QUEUE(name=f"{name}queue_scale_")} ! '
             f'videoscale ! '
         )
-    else:
+    elif source_type == 'file':
         source_element = (
             f'filesrc location="{video_source}" name={name} ! '
             f'{QUEUE(name=f"{name}_queue_decode")} ! '
             f'decodebin name={name}_decodebin ! '
+        )
+    elif source_type == 'rtsp':
+        #print("DBUG: =====================rtsp2222222222222==================")
+        source_element = (
+            #f'rtspsrc location=rtsp://192.168.51.20:8554/live/test latency=0 name={name} ! '
+            f'rtspsrc location=rtsp://192.168.51.233:8554/stream latency=0 name={name} ! '
+            f'rtph264depay ! '
+            f'h264parse config-interval=1 ! '
+            f'capsfilter caps="video/x-h264,stream-format=(string)byte-stream,alignment=(string)au" ! '
+            f'{QUEUE(name=f"{name}_queue_decode")} ! '
+            f'decodebin name={name}_decodebin ! '
+            #f'videoflip name=videoflip video-direction=horiz ! '
         )
     source_pipeline = (
         f'{source_element} '
@@ -109,7 +124,6 @@ def SOURCE_PIPELINE(video_source, video_width=640, video_height=640, video_forma
         f'videoconvert n-threads=3 name={name}_convert qos=false ! '
         f'video/x-raw, pixel-aspect-ratio=1/1, format={video_format}, width={video_width}, height={video_height} '
     )
-
     return source_pipeline
 
 def INFERENCE_PIPELINE(

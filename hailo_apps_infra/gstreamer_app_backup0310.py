@@ -69,8 +69,7 @@ class GStreamerApp:
     def __init__(self, args, user_data: app_callback_class):
         # Set the process title
         setproctitle.setproctitle("Hailo Python App")
-        
-        
+
         #set timer=0, cnt-0
         self.last_print_time = 0
         self.call_count = 0
@@ -97,8 +96,6 @@ class GStreamerApp:
         self.threads = []
         self.error_occurred = False
         self.pipeline_latency = 300  # milliseconds
-        self.recovery_timer = None
-        self.recovery_timeout = 60  # 影像恢復等待時間 (秒)
 
         # Set Hailo parameters; these parameters should be set based on the model used
         self.batch_size = 1
@@ -144,36 +141,74 @@ class GStreamerApp:
         t = message.type
         if t == Gst.MessageType.EOS:
             print("End-of-stream")
-            self.handle_stream_interruption()
+            print(f"Debug322222222222222222222222222")
+            self.on_eos()
+            print(f"Debug322222222222222222222222222")
         elif t == Gst.MessageType.ERROR:
             err, debug = message.parse_error()
             print(f"Error: {err}, {debug}", file=sys.stderr)
-            # 檢查錯誤訊息，判斷是否為暫時性的問題
-            if "network" in str(err).lower() or "source" in str(err).lower():
-                self.handle_stream_interruption()
-            else:
-                self.error_occurred = True
-                self.shutdown()
+            self.error_occurred = True
+            self.shutdown()
+        # QOS
         elif t == Gst.MessageType.QOS:
+            # Handle QoS message here
             qos_element = message.src.get_name()
             print(f"QoS message received from {qos_element}")
+            print(f"Debug33333333333333333333333333")
         return True
-    
-    def handle_stream_interruption(self):
-        self.pipeline.set_state(Gst.State.PAUSED)
-        if self.recovery_timer:
-            self.recovery_timer.cancel()
-        self.recovery_timer = threading.Timer(self.recovery_timeout, self.shutdown)
-        self.recovery_timer.start()
-        print(f"影像中斷，等待 {self.recovery_timeout} 秒恢復...")
-
-    def try_resume_pipeline(self):
-        if self.recovery_timer:
-            self.recovery_timer.cancel()
-            self.recovery_timer = None
-            self.pipeline.set_state(Gst.State.PLAYING)
-            print("影像恢復，繼續播放。")    
         
+        # self.call_count += 1
+        # t = message.type
+        # if t == Gst.MessageType.EOS:
+        #     print(f"End-of-stream, wait connect (呼叫次數: {self.call_count})")
+            
+        #     # 重新播放影片
+        #     self.pipeline.set_state(Gst.State.READY)
+        #     self.pipeline.set_state(Gst.State.PLAYING)
+
+        # elif t == Gst.MessageType.ERROR:
+        #     self.pipeline.set_state(Gst.State.READY)
+        #     self.pipeline.set_state(Gst.State.PLAYING)
+        # return True
+
+        # self.call_count += 1  # 每次呼叫增加計數
+        # current_time = time.time()
+        # print(f"End-of-stream, wait connect (呼叫次數: {self.call_count})")
+        # return True
+
+        
+        # while True:
+        #     print(f"End-of-stream, wait connect (呼叫次數: {self.call_count})")
+        #     self.last_print_time = current_time  # 更新時間
+        #     while current_time - self.last_print_time < 1:
+        #         current_time = time.time()
+        #     break  # 若未滿 1 秒，則跳出迴圈
+        
+
+        # # 確保至少每秒印出一次
+        # while current_time - self.last_print_time >= 1:
+        #     print(f"End-of-stream, wait connect (呼叫次數: {self.call_count})")
+        #     self.last_print_time = current_time  # 更新時間
+        #     break
+        # else:
+        #     self.last_print_time = current_time  # 直接更新時間，不印出
+        # return True
+
+        # if t == Gst.MessageType.EOS:
+        #     print("End-of-stream")
+        #     self.on_eos()
+        # elif t == Gst.MessageType.ERROR:
+        #     err, debug = message.parse_error()
+        #     print(f"Error: {err}, {debug}", file=sys.stderr)
+        #     self.error_occurred = True
+        #     self.shutdown()
+        # # QOS
+        # elif t == Gst.MessageType.QOS:
+        #     # Handle QoS message here
+        #     qos_element = message.src.get_name()
+        #     print(f"QoS message received from {qos_element}")
+        #return True
+
 
     def on_eos(self):
         if self.source_type == "file":

@@ -109,6 +109,7 @@ def SOURCE_PIPELINE(video_source, video_width=640, video_height=640, video_forma
         source_element = (
             #f'rtspsrc location=rtsp://192.168.51.20:8554/live/test latency=0 name={name} ! '
             f'rtspsrc location=rtsp://192.168.51.233:8554/stream latency=0 name={name} ! '
+            #f'rtspsrc location=rtsp://192.168.51.28:8554/live/test latency=0 name={name} ! '
             f'rtph264depay ! '
             f'h264parse config-interval=1 ! '
             f'capsfilter caps="video/x-h264,stream-format=(string)byte-stream,alignment=(string)au" ! '
